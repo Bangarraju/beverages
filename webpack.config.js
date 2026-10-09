@@ -11,6 +11,7 @@ module.exports={
     output:{
         path: path.resolve(__dirname,'dist'),
         filename: '[name].js',
+        publicPath: process.env.GITHUB_PAGES === 'true' ? '/beverages/' : 'auto',
         clean: true
     },
     optimization: {
