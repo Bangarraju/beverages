@@ -3,23 +3,25 @@ import { createNode, append } from './nodeOperations';
 import Beverage from './beverage';
 import { gridView, onPageSizeChanged,onStatusUpdate,moveToNextState } from './gridView';
 import '../styles/main.scss';
-import {addMenu, setMenuList} from './indexedDb';
+import {getMenuList, getQueue} from './firebaseDb';
+
 
 const service = Service; //axios service object
 const beverage = Beverage; // beverage object to order and changing queue
 
-/* get menu from server and set it into the local storage*/
-service.get("/BeveragesMenu", handleRequest)
 
-function handleRequest(status, data) {
-    if (status === 200) {
-        if (data.length) {
-            addMenu(data)
-        } else {
-            console.log('Not get any data from server')
-        }
-    }
-}
+/* get menu from server and set it into the local storage*/
+// service.get("/BeveragesMenu", handleRequest)
+
+// function handleRequest(status, data) {
+//     if (status === 200) {
+//         if (data.length) {
+//             addMenu(data)
+//         } else {
+//             console.log('Not get any data from server')
+//         }
+//     }
+// }
 
 
 //append each order into the Beverage Queue and other list too
@@ -30,6 +32,7 @@ function appendItemsintoList(item, ul) {
     let maindiv = createNode('div');
     let date = new Date(item.OrderDeliveredTimeStamp);
     maindiv.id = `${item.id}`;
+    item = item.data()
     if (ul !== document.getElementById('isCollected')) {
         //this logic is for in queue elements to hide remaining data
         beverageDiv.innerHTML = `<b>${item.OrderedBeverage.Name}</b><br/><span hidden>${date? date.toDateString() :''}</span>`;
@@ -52,21 +55,17 @@ function appendItemsintoList(item, ul) {
 //setting menu into list and append into dom elements
 function beveragesMenu() {
     const ul = document.getElementById('beverageMenu');
-    setMenuList(appendListTopage)
+    getMenuList(appendListTopage)
 
     function appendListTopage(menu){
-    if (menu) {
-        // let menu = JSON.parse(localStorage.getItem('menu'));
-        menu.map(function (item) {
-            let li = createNode('li');
-            let div = createNode('div');
-            div.innerText = `${item.Name}`;
-            div.classList.add('menuItem');
-            append(li, div);
-            append(ul, li);
-        })
+        let item = menu
+        let li = createNode('li');
+        let div = createNode('div');
+        div.innerText = `${item.Name}`;
+        div.classList.add('menuItem');
+        append(li, div);
+        append(ul, li);
     }
-}
 }
 
 //fetching orders and set into list and append those to dom elements
@@ -76,15 +75,16 @@ function beveragesQueue() {
     let readyToCollectelement = document.getElementById('isReadyToCollect');
     let collectedElement = document.getElementById('isCollected');
 
-    service.get("/BeveragesQueue", orderList) //
+    // service.get("/BeveragesQueue", orderList) //
+    getQueue(orderList)
 
-    function orderList(status, data) {
-        if (status === 200 && data.length) {
+    function orderList(data) {
+        if (data.length) {
             //filtering corresponding elements in for queue, mixing, ready to collect and collected items
-            let beingMixedItems = data.filter(item => item.IsBeingMixed && !item.IsReadyToCollect && !item.IsCollected);
-            let readyToCollectItems = data.filter(item => item.IsReadyToCollect && !item.IsCollected);
-            let inQueueItems = data.filter(item => !item.IsCollected && !item.IsReadyToCollect && !item.IsBeingMixed);
-            let collectedItems = data.filter(item => item.IsCollected);
+            let beingMixedItems = data.filter(item => item.data().IsBeingMixed && !item.data().IsReadyToCollect && !item.data().IsCollected);
+            let readyToCollectItems = data.filter(item => item.data().IsReadyToCollect && !item.data().IsCollected);
+            let inQueueItems = data.filter(item => !item.data().IsCollected && !item.data().IsReadyToCollect && !item.data().IsBeingMixed);
+            let collectedItems = data.filter(item => item.data().IsCollected);
             //appending items into the corresponding div elements 
             inQueueItems.map(
                 (item) => appendItemsintoList(item, queueElement)
@@ -136,15 +136,11 @@ window.onload = function () {
     gridView(); //function call to Grid view
 
     //onchage of page size of grid
-    // document.getElementById('page-size').onchange = ()=>{
-    //     console.log('page number changed')
-    //    onPageSizeChanged(); 
-    // }
-
-    $('#page-size').on('load change',()=>{
+    document.getElementById('page-size').onchange = ()=>{
         console.log('page number changed')
        onPageSizeChanged(); 
-    })
+    }
+
     let updateElement = document.getElementById('update')
     updateElement.onclick = ()=>{
         onStatusUpdate()

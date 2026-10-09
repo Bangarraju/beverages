@@ -1,6 +1,6 @@
 import { createNode, append } from './nodeOperations';
 import Beverage from './beverage';
-import {setMenuList} from './indexedDb'
+import {getMenuList} from './firebaseDb'
 
 import '../styles/form.scss'
 
@@ -9,16 +9,13 @@ const beverage = Beverage; //beverage object
 //set the option elements into dorpdown 
 function setdropdownList() {
     const select = document.getElementById('menuDropdown');
-    setMenuList(appendMenuToDropdow)
+    getMenuList(appendMenuToDropdow)
     function appendMenuToDropdow(menu) {
-        if (menu) {
-            menu.map(function (item) {
-                let option = createNode('option');
-                option.text = `${item.Name}`;
-                option.id = `${item.BeverageId}`;
-                select.add(option);
-            })
-        }
+        let item = menu
+        let option = createNode('option');
+        option.text = `${item.Name}`;
+        option.id = `${item.BeverageId}`;
+        select.add(option);
     }
 }
 

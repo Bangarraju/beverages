@@ -6,6 +6,7 @@ import { Grid } from 'ag-grid-community';
 // import {Grid} from 'ag-grid-enterprise';
 
 //importing user define modules
+import { getQueue, updateQueue } from './firebaseDb'
 import Service from './service';
 import { createNode, changeQueueDomElements } from './nodeOperations';
 
@@ -97,17 +98,6 @@ function onSelectionChanged(params) {
     let indexes = selectedRowsStatus.map((selectedRowStatus)=>{return queue.indexOf(selectedRowStatus)})
     let min_index = Math.min.apply(null,indexes)
     updatedQueue = queue.slice(min_index + 1)
-    // if(selectedRows.length == 1){
-    //   let index = queue.indexOf(selectedRowsStatus.toString());
-    //   console.log(index)
-    //   if (index >= 0) {
-    //     updatedQueue = queue.slice(index + 1)
-    //   }
-    // }else{
-    //   let indexes = selectedRowsStatus.map((selectedRowStatus)=>{return queue.indexOf(selectedRowStatus)})
-    //   let min_index = Math.min.apply(null,indexes)
-    //   updatedQueue = queue.slice(min_index + 1)
-    // }
     updatedQueue.map((stat) => {
       let option = createNode('option')
       option.text = `${stat}`
@@ -167,7 +157,6 @@ export function moveToNextState() {
 
 function onCellValueChanged(params) {
   let colId = params.column.getId();
-  // console.log(params.oldValue)
   pushDataToServer(colId, params.data, params.oldValue)
 }
 
@@ -175,11 +164,10 @@ function pushDataToServer(colId, data, oldStatus) {
   let beverage = {}
   let beverageId = data.id;
   const url = `/BeveragesQueue/${beverageId}`;
-
   //changed in status 
   if (colId === 'status') {
     let beverageStatus = data.status
-    let clickLiele = document.getElementById(beverageId).parentElement;
+    let clickLiele = document.getElementById(data.docRefId).parentElement;
     if (beverageStatus == 'Being mixed') {
       beverage.IsBeingMixed = true;
     }
@@ -189,8 +177,8 @@ function pushDataToServer(colId, data, oldStatus) {
     if (beverageStatus == 'Collected') {
       beverage.IsCollected = true;
       //dom element changes
-      document.getElementById(beverageId).firstChild.lastElementChild.hidden = false;
-      document.getElementById(beverageId).lastElementChild.lastElementChild.hidden = false;
+      document.getElementById(data.docRefId).firstChild.lastElementChild.hidden = false;
+      document.getElementById(data.docRefId).lastElementChild.lastElementChild.hidden = false;
     }
     //dom element changes
     changeQueueDomElements(clickLiele, getId(oldStatus), getId(beverageStatus))
@@ -198,16 +186,8 @@ function pushDataToServer(colId, data, oldStatus) {
   if (colId === 'phoneNumber') {
     beverage.phoneNumber = data.phoneNumber;
   }
-  //send changed data to server 
-  service.sendRequest(url, 'PATCH', beverage, handleRequst)
-  //callback function to handle request of patch 
-  function handleRequst(status, data) {
-    if (status == 200) {
-      console.log('patched data sucess')
-    } else {
-      console.log('patch failed')
-    }
-  }
+
+  updateQueue(beverage,data.docRefId)
 
   function getId(state) {
     switch (state) {
@@ -235,15 +215,18 @@ export function onPageSizeChanged(newPageSize) {
 export function gridView() {
 
   //get orders from the server and set it into the Grid
-  service.get("/BeveragesQueue", setRowData)
+  getQueue(setRowData)
   //callback function to set data in Grid
-  function setRowData(status, data) {
-    if (status == 200 && data.length) {
-      let rowdata = data
-      rowdata.map((rowdata) => {
+  function setRowData(dataRefs) {
+    if (dataRefs.length) {
+      let rowdata = []
+      dataRefs.map((dataRef) => {
+        let row = dataRef.data();
         let date = new Date(rowdata.OrderDeliveredTimeStamp);
-        rowdata.status = rowdata.IsCollected ? 'Collected' : (rowdata.IsReadyToCollect ? 'Ready to collect' : (rowdata.IsBeingMixed ? 'Being mixed' : 'In queue'));
-        rowdata.OrderDeliveredTime = rowdata.IsCollected ? date.toDateString() : '';
+        row.docRefId = dataRef.id //document Ref Id for find the document in firestore
+        row.status = row.IsCollected ? 'Collected' : (row.IsReadyToCollect ? 'Ready to collect' : (row.IsBeingMixed ? 'Being mixed' : 'In queue'));
+        row.OrderDeliveredTime = row.IsCollected ? date.toDateString() : '';
+        rowdata.push(row)
       })
       gridOptions.api.setRowData(rowdata);
       // gridOptions.api.setServerSideDatasource(rowdata);
