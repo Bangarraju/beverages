@@ -1,4 +1,3 @@
-import 'regenerator-runtime/runtime';
 import Service from './service'
 
 const service = Service;

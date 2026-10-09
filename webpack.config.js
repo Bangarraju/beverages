@@ -3,13 +3,21 @@ const MiniCssextractPlugin = require("mini-css-extract-plugin");
 const path = require("path")
 
 module.exports={
+    mode: process.env.NODE_ENV || "production",
     entry:{
         main: './src/js/index.js',
         form:'./src/js/form.js'
     },
     output:{
         path: path.resolve(__dirname,'dist'),
-        filename: '[name].js'
+        filename: '[name].js',
+        clean: true
+    },
+    optimization: {
+        runtimeChunk: 'single',
+        splitChunks: {
+            chunks: 'all'
+        }
     },
     module:{
         rules:[
@@ -25,7 +33,10 @@ module.exports={
                 use:[
                     {
                         loader:"html-loader",
-                        options:{minimize: true}
+                        options:{
+                            minimize: true,
+                            sources: false
+                        }
                     }
                 ]
             },

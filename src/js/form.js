@@ -10,8 +10,7 @@ const beverage = Beverage; //beverage object
 function setdropdownList() {
     const select = document.getElementById('menuDropdown');
     getMenuList(appendMenuToDropdow)
-    function appendMenuToDropdow(menu) {
-        let item = menu
+    function appendMenuToDropdow(item) {
         let option = createNode('option');
         option.text = `${item.Name}`;
         option.id = `${item.BeverageId}`;

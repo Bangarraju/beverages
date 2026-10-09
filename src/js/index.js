@@ -9,7 +9,6 @@ import {getMenuList, getQueue} from './firebaseDb';
 const service = Service; //axios service object
 const beverage = Beverage; // beverage object to order and changing queue
 
-
 /* get menu from server and set it into the local storage*/
 // service.get("/BeveragesMenu", handleRequest)
 
@@ -30,9 +29,9 @@ function appendItemsintoList(item, ul) {
     let beverageDiv = createNode('div');
     let customerDiv = createNode('div');
     let maindiv = createNode('div');
-    let date = new Date(item.OrderDeliveredTimeStamp);
     maindiv.id = `${item.id}`;
     item = item.data()
+    let date = new Date(item.OrderDeliveredTimeStamp);
     if (ul !== document.getElementById('isCollected')) {
         //this logic is for in queue elements to hide remaining data
         beverageDiv.innerHTML = `<b>${item.OrderedBeverage.Name}</b><br/><span hidden>${date? date.toDateString() :''}</span>`;
@@ -158,4 +157,3 @@ window.onload = function () {
         }
     }
 }
-

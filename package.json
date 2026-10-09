@@ -1,38 +1,40 @@
 {
   "name": "webpacktut",
   "version": "1.0.0",
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0"
+  },
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "start:dev": "webpack-dev-server"
+    "build": "webpack --mode production",
+    "start:dev": "webpack serve --mode development"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@babel/core": "^7.10.5",
-    "@babel/plugin-proposal-class-properties": "^7.10.4",
-    "@babel/preset-env": "^7.10.4",
-    "@babel/preset-react": "^7.10.4",
-    "babel-loader": "^8.3.0",
-    "css-loader": "^6.7.3",
-    "file-loader": "^6.0.0",
-    "html-loader": "^1.1.0",
-    "html-webpack-plugin": "^5.5.0",
-    "mini-css-extract-plugin": "^2.7.2",
-    "node-sass": "^4.14.1",
-    "sass-loader": "^9.0.2",
-    "style-loader": "^1.2.1",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1",
-    "webpack-dev-server": "^3.11.0",
+    "@babel/core": "^8.0.7",
+    "@babel/preset-env": "^8.0.7",
+    "@babel/preset-react": "^8.0.1",
+    "babel-loader": "^10.1.1",
+    "css-loader": "^7.1.5",
+    "file-loader": "^6.2.0",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.8",
+    "mini-css-extract-plugin": "^2.10.2",
+    "sass": "^1.105.1",
+    "sass-loader": "^17.0.1",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.111.1",
+    "webpack-cli": "^7.2.3",
+    "webpack-dev-server": "^6.0.0",
     "wepack-cli": "0.0.1-security"
   },
   "dependencies": {
-    "ag-grid-community": "^23.2.1",
-    "ag-grid-enterprise": "^23.2.1",
-    "firebase": "^7.17.2"
-    "axios": "^0.21.1"
+    "ag-grid-community": "^36.2.0",
+    "ag-grid-enterprise": "^36.2.0",
+    "axios": "^1.20.0",
+    "firebase": "^13.0.0"
   }
 }

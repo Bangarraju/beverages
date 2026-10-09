@@ -1,17 +1,36 @@
 //importing ag-grid modules
-import 'ag-grid-community/dist/styles/ag-grid.css'
-import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
-import 'ag-grid-enterprise';
-import { Grid } from 'ag-grid-community';
-// import {Grid} from 'ag-grid-enterprise';
+import 'ag-grid-community/styles/ag-grid.css'
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import {
+  ClientSideRowModelApiModule,
+  ClientSideRowModelModule,
+  ColumnApiModule,
+  ModuleRegistry,
+  PaginationModule,
+  RowSelectionModule,
+  SelectEditorModule,
+  TextEditorModule,
+  TextFilterModule,
+  createGrid
+} from 'ag-grid-community';
+import { CellSelectionModule } from 'ag-grid-enterprise';
+
+ModuleRegistry.registerModules([
+  CellSelectionModule,
+  ClientSideRowModelApiModule,
+  ClientSideRowModelModule,
+  ColumnApiModule,
+  PaginationModule,
+  RowSelectionModule,
+  SelectEditorModule,
+  TextEditorModule,
+  TextFilterModule
+]);
 
 //importing user define modules
 import { getQueue, updateQueue } from './firebaseDb'
-import Service from './service';
 import { createNode, changeQueueDomElements } from './nodeOperations';
 
-
-const service = Service //service object for getting orders data
 //defining headers of the table or Grid
 const queue = ['In queue', 'Being mixed', 'Ready to collect', 'Collected']
 let columnDefs = [
@@ -56,7 +75,6 @@ let gridOptions = {
   defaultColDef: {
     sortable: true,
     resizable: true,
-    selectable: true,
     filter: true,
     flex: 1,
     minWidth: 150,
@@ -71,7 +89,9 @@ let gridOptions = {
   columnDefs: columnDefs, //for adding headers to the table
   pagination: true,
   paginationPageSize: 3, //by default pagination page size
+  paginationPageSizeSelector: false,
   rowSelection: "multiple",
+  theme: 'legacy',
   paginationNumberFormatter(params) {
     return '[' + params.value.toLocaleString() + ']';
   },
@@ -80,13 +100,13 @@ let gridOptions = {
 };
 
 function isFirstColumn(params) {
-  var displayedColumns = params.columnApi.getAllDisplayedColumns();
+  var displayedColumns = params.api.getAllDisplayedColumns();
   var thisIsFirstColumn = displayedColumns[0] === params.column;
   return thisIsFirstColumn;
 }
 
 function onSelectionChanged(params) {
-  let selectedRows = gridOptions.api.getSelectedRows();
+  let selectedRows = params.api.getSelectedRows();
   let updateStatus = document.getElementById('updateStatus')
   let select = document.getElementById('statusDropdown')
   if (selectedRows.length > 0) {
@@ -113,11 +133,12 @@ function onSelectionChanged(params) {
   }
 }
 
+let gridApi;
+
 export function onStatusUpdate() {
   let newstatusElement = document.getElementById('statusDropdown')
   if (newstatusElement.selectedIndex < 1) return;
-  var api = gridOptions.api;
-  let selectedRows = api.getSelectedRows();
+  let selectedRows = gridApi.getSelectedRows();
   selectedRows.map((selectedRow) => {
     let oldStatus = selectedRow.status;
     if (selectedRow.status == newstatusElement.value) { return };
@@ -128,13 +149,12 @@ export function onStatusUpdate() {
       return
     }
 
-    api.applyTransactionAsync({ update: [selectedRow] });
+    gridApi.applyTransactionAsync({ update: [selectedRow] });
   })
 }
 
 export function moveToNextState() {
-  var api = gridOptions.api;
-  let selectedRows = api.getSelectedRows();
+  let selectedRows = gridApi.getSelectedRows();
   selectedRows.map((selectedRow) => {
     let oldStatus = selectedRow.status
     switch (oldStatus) {
@@ -151,7 +171,7 @@ export function moveToNextState() {
         break;
     }
     pushDataToServer('status', selectedRow, oldStatus)
-    api.applyTransactionAsync({ update: [selectedRow] });
+    gridApi.applyTransactionAsync({ update: [selectedRow] });
   })
 }
 
@@ -208,13 +228,31 @@ function pushDataToServer(colId, data, oldStatus) {
 //if page size changes, it sets pagination size
 export function onPageSizeChanged(newPageSize) {
   let value = document.getElementById('page-size').value;
-  gridOptions.api.paginationSetPageSize(Number(value));
+  gridApi.setGridOption('paginationPageSize', Number(value));
 }
 
 //show data in Grid i.e., in table 
 export function gridView() {
+  // Create the grid once; later refreshes update its rows without discarding selection or controls.
+  if (!gridApi) {
+    let eGridDiv = document.querySelector('#grid');
+    gridApi = createGrid(eGridDiv, gridOptions);
 
-  //get orders from the server and set it into the Grid
+    //setting user defined pagination in the paging div
+    let pagingDiv = createNode('div')
+    pagingDiv.classList.add('example-wrapper')
+    pagingDiv.innerHTML = `<div class="example-header">
+                          Page size:
+                          <select id="page-size">
+                            <option value="3" selected>3</option>
+                            <option value="6">6</option>
+                            <option value="9">9</option>
+                          </select>
+                        </div>`
+    document.getElementsByClassName('ag-paging-panel')[0].append(pagingDiv)
+  }
+
+  //get orders from Firestore and set them in the Grid
   getQueue(setRowData)
   //callback function to set data in Grid
   function setRowData(dataRefs) {
@@ -222,32 +260,13 @@ export function gridView() {
       let rowdata = []
       dataRefs.map((dataRef) => {
         let row = dataRef.data();
-        let date = new Date(rowdata.OrderDeliveredTimeStamp);
-        row.docRefId = dataRef.id //document Ref Id for find the document in firestore
+        let date = new Date(row.OrderDeliveredTimeStamp);
+        row.docRefId = dataRef.id //document Ref Id for find the document in Firestore
         row.status = row.IsCollected ? 'Collected' : (row.IsReadyToCollect ? 'Ready to collect' : (row.IsBeingMixed ? 'Being mixed' : 'In queue'));
         row.OrderDeliveredTime = row.IsCollected ? date.toDateString() : '';
         rowdata.push(row)
       })
-      gridOptions.api.setRowData(rowdata);
-      // gridOptions.api.setServerSideDatasource(rowdata);
+      gridApi.setGridOption('rowData', rowdata);
     }
   }
-
-  //get Grid element to show grid
-  let eGridDiv = document.querySelector('#grid');
-  eGridDiv.innerHTML = "";
-  new Grid(eGridDiv, gridOptions); //enebling Grid and sending data and corresponding settings to the Grid class to ag-Grid
-
-  //setting user defined pagination in the paging div
-  let pagingDiv = createNode('div')
-  pagingDiv.classList.add('example-wrapper')
-  pagingDiv.innerHTML = `<div class="example-header">
-                        Page size:
-                        <select id="page-size">
-                          <option value="3" selected>3</option>
-                          <option value="6">6</option>
-                          <option value="9">9</option>
-                        </select>
-                      </div>`
-  document.getElementsByClassName('ag-paging-panel')[0].append(pagingDiv) //append that div into grid
 }

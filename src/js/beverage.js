@@ -42,7 +42,7 @@ class Beverage{
     changeQueue(event) {
 
         event.preventDefault();
-        const clickId = event.path[2].id;
+        const clickId = event.composedPath()?.[2].id;
         const itemId = event.target.id;
         const url = `/BeveragesQueue/${itemId}`;
         let clickLiele = document.getElementById(itemId).parentElement;
