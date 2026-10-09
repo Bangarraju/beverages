@@ -102,10 +102,12 @@ For this repository, the expected site URL is:
 
 <https://bangarraju.github.io/beverages/>
 
-To enable deployment, open the repository's **Settings → Pages** and set the
-build and deployment source to **GitHub Actions**. After the workflow succeeds,
-the workflow's deployment environment shows the published URL. The order form
-is available at `/beverages/form.html`.
+The workflow enables Pages if the repository has not been initialized for Pages
+yet. The repository must allow GitHub Actions to manage Pages; if the workflow
+cannot enable it, open **Settings → Pages** and set the build and deployment
+source to **GitHub Actions**. After the workflow succeeds, the workflow's
+deployment environment shows the published URL. The order form is available at
+`/beverages/form.html`.
 
 The Pages build sets Webpack's asset base to `/beverages/`, so shared JavaScript
 chunks load correctly from the repository subpath. Local builds keep Webpack's
